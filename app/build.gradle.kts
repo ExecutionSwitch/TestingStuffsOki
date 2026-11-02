@@ -7,10 +7,23 @@ plugins {
 android {
     namespace = "com.example.mathnotes"
     compileSdk = 36
-    defaultConfig { applicationId = "com.example.mathnotes"; minSdk = 26; targetSdk = 36; versionCode = 1; versionName = "1.0" }
+    defaultConfig { applicationId = "com.example.mathnotes"; minSdk = 26; targetSdk = 36; versionCode = 3; versionName = "1.3" }
     compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+    signingConfigs {
+        create("persistent") {
+            storeFile = file("../signing/mathnotes.jks")
+            storePassword = System.getenv("MATHNOTES_SIGNING_PASSWORD") ?: ""
+            keyAlias = "mathnotes"
+            keyPassword = System.getenv("MATHNOTES_SIGNING_PASSWORD") ?: ""
+        }
+    }
+    buildTypes {
+        getByName("debug") {
+            signingConfig = signingConfigs.getByName("persistent")
+        }
+    }
 }
 dependencies {
     implementation(platform("androidx.compose:compose-bom:2025.08.00"))
