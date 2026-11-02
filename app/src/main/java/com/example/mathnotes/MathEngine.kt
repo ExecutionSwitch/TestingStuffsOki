@@ -3,12 +3,13 @@ import java.math.BigDecimal
 import java.math.MathContext
 object MathEngine {
  private val mc = MathContext.DECIMAL64
- fun evaluate(expression:String):String? = try { Parser(expression.replace('×','*').replace('÷','/')).parse().stripTrailingZeros().toPlainString() } catch (_:Exception) { null }
+ fun evaluate(expression:String):String? = try { Parser(expression.replace('×','*').replace('x','*').replace('X','*').replace('÷','/')).parse().stripTrailingZeros().toPlainString() } catch (_:Exception) { null }
  fun complete(text:String,cursor:Int):Pair<String,Int>? {
   if(cursor<=0 || cursor>text.length || text[cursor-1]!='=') return null
   val start = text.lastIndexOf('\n',cursor-1).let { if(it<0) 0 else it+1 }
   val prefix = text.substring(start,cursor-1)
   val match = Regex("[0-9(][0-9\\s.+\\-*/×÷()%]*$").find(prefix) ?: return null
+  if (match.range.first > 0 && (prefix[match.range.first - 1].isLetterOrDigit() || prefix[match.range.first - 1] in "+-*/×÷(")) return null
   val result = evaluate(match.value.trim()) ?: return null
   val insertion = " $result"
   return (text.substring(0,cursor)+insertion+text.substring(cursor)) to (cursor+insertion.length)
