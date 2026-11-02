@@ -5,6 +5,7 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+  actions: read
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,6 +26,29 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
+      - name: Restore persistent signing identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p signing
+          artifact_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --jq '.artifacts[] | select(.name == "mathnotes-signing-key" and .expired == false) | .id' | head -n 1)"
+          if [ -n "$artifact_id" ]; then
+            curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" -o /tmp/mathnotes-signing.zip
+            unzip -oq /tmp/mathnotes-signing.zip -d signing
+          else
+            if gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --jq '.artifacts[].name' | grep -qx 'mathnotes-signing-key'; then
+              echo "Signing identity expired: restore original signing backup instead of generating a new key"
+              exit 1
+            fi
+            password="$(openssl rand -hex 24)"
+            keytool -genkeypair -noprompt -alias mathnotes -keyalg RSA -keysize 3072 -validity 10000 -keystore signing/mathnotes.jks -storepass "$password" -keypass "$password" -dname "CN=Math Notes, OU=Personal, O=Math Notes, C=US"
+            printf '%s' "$password" > signing/password.txt
+          fi
+          test -s signing/mathnotes.jks
+          test -s signing/password.txt
+          echo "MATHNOTES_SIGNING_PASSWORD=$(cat signing/password.txt)" >> "$GITHUB_ENV"
       - name: Build APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Upload APK
@@ -32,3 +56,11 @@ jobs:
         with:
           name: MathNotesPixel-debug-apk
           path: app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Preserve signing identity for future updates
+        uses: actions/upload-artifact@v4
+        with:
+          name: mathnotes-signing-key
+          path: signing/
+          retention-days: 90
+          if-no-files-found: error
