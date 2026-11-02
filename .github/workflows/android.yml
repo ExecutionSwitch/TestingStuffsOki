@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p signing
-          artifact_id="$(gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --jq '.artifacts[] | select(.name == "mathnotes-signing-key" and .expired == false) | .id' | head -n 1)"
+          artifact_id="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --jq '.artifacts[] | select(.name == "mathnotes-signing-key" and .expired == false) | .id' | tail -n 1)"
           if [ -n "$artifact_id" ]; then
             curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" -o /tmp/mathnotes-signing.zip
             unzip -oq /tmp/mathnotes-signing.zip -d signing
