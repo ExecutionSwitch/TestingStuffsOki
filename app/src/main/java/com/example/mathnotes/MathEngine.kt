@@ -8,7 +8,7 @@ object MathEngine {
   if(cursor<=0 || cursor>text.length || text[cursor-1]!='=') return null
   val start = text.lastIndexOf('\n',cursor-1).let { if(it<0) 0 else it+1 }
   val prefix = text.substring(start,cursor-1)
-  val match = Regex("[0-9(][0-9\\s.+\\-*/×÷()%]*$").find(prefix) ?: return null
+  val match = Regex("[0-9(][0-9\\s.+\\-*/×xX÷()%]*$").find(prefix) ?: return null
   if (match.range.first > 0 && (prefix[match.range.first - 1].isLetterOrDigit() || prefix[match.range.first - 1] in "+-*/×÷(")) return null
   val result = evaluate(match.value.trim()) ?: return null
   val insertion = " $result"
