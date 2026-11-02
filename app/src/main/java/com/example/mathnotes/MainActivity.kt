@@ -28,7 +28,7 @@ class MainActivity : ComponentActivity() {
  override fun onCreate(savedInstanceState: Bundle?) {
   super.onCreate(savedInstanceState)
   val dao = Room.databaseBuilder(applicationContext, NotesDatabase::class.java, "notes.db").build().notesDao()
-  setContent { MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) { NotesScreen(dao) } }
+  setContent { MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) { Box(Modifier.fillMaxSize().safeDrawingPadding()) { NotesScreen(dao) } } }
  }
 }
 
