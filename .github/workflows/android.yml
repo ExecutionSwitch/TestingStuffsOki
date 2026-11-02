@@ -1,14 +1,13 @@
-name: Build Android APK
+name: Build Math Notes unsigned APK
 on:
   push:
     branches: [main]
   workflow_dispatch:
-concurrency:
-  group: mathnotes-signing-build
-  cancel-in-progress: true
 permissions:
   contents: read
-  actions: read
+concurrency:
+  group: mathnotes-build
+  cancel-in-progress: true
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -29,43 +28,24 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.13'
-      - name: Restore persistent signing identity
-        env:
-          GH_TOKEN: ${{ github.token }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p signing
-          artifact_id="$(gh api --paginate "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --jq '.artifacts[] | select(.name == "mathnotes-signing-key" and .expired == false) | .id' | tail -n 1)"
-          if [ -n "$artifact_id" ]; then
-            curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/artifacts/${artifact_id}/zip" -o /tmp/mathnotes-signing.zip
-            unzip -oq /tmp/mathnotes-signing.zip -d signing
-          else
-            if gh api "repos/${GITHUB_REPOSITORY}/actions/artifacts?per_page=100" --jq '.artifacts[].name' | grep -qx 'mathnotes-signing-key'; then
-              echo "Signing identity expired: restore original signing backup instead of generating a new key"
-              exit 1
-            fi
-            password="$(openssl rand -hex 24)"
-            keytool -genkeypair -noprompt -alias mathnotes -keyalg RSA -keysize 3072 -validity 10000 -keystore signing/mathnotes.jks -storepass "$password" -keypass "$password" -dname "CN=Math Notes, OU=Personal, O=Math Notes, C=US"
-            printf '%s' "$password" > signing/password.txt
-          fi
-          test -s signing/mathnotes.jks
-          test -s signing/password.txt
-          echo "MATHNOTES_SIGNING_PASSWORD=$(cat signing/password.txt)" >> "$GITHUB_ENV"
-      - name: Run calculator regression tests
+      - name: Run calculator tests
         run: gradle --no-daemon :app:testDebugUnitTest
-      - name: Build APK
-        run: gradle --no-daemon :app:assembleDebug
-      - name: Upload APK
+      - name: Build unsigned release APK
+        run: gradle --no-daemon :app:assembleRelease
+      - name: Upload unsigned APK
         uses: actions/upload-artifact@v4
         with:
-          name: MathNotesPixel-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Preserve signing identity for future updates
+          name: MathNotesPixel-unsigned
+          path: app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error
+      - name: Package Android signing tools
+        run: |
+          mkdir -p signing-tools
+          cp "$ANDROID_HOME/build-tools/36.0.0/lib/apksigner.jar" signing-tools/
+          cp "$ANDROID_HOME/build-tools/36.0.0/zipalign" signing-tools/
+      - name: Upload Android signing tools
         uses: actions/upload-artifact@v4
         with:
-          name: mathnotes-signing-key
-          path: signing/
-          retention-days: 90
+          name: Android-signing-tools
+          path: signing-tools/
           if-no-files-found: error
