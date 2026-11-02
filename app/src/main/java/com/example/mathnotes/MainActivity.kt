@@ -1,6 +1,8 @@
 package com.example.mathnotes
 
 import android.os.Bundle
+import android.graphics.Color
+import androidx.core.view.WindowCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.BackHandler
@@ -27,8 +29,17 @@ import kotlinx.coroutines.withContext
 class MainActivity : ComponentActivity() {
  override fun onCreate(savedInstanceState: Bundle?) {
   super.onCreate(savedInstanceState)
+  window.decorView.setBackgroundColor(Color.rgb(20, 18, 24))
+  window.statusBarColor = Color.rgb(20, 18, 24)
+  window.navigationBarColor = Color.rgb(20, 18, 24)
+  window.isStatusBarContrastEnforced = false
+  window.isNavigationBarContrastEnforced = false
+  WindowCompat.getInsetsController(window, window.decorView).apply {
+    isAppearanceLightStatusBars = false
+    isAppearanceLightNavigationBars = false
+  }
   val dao = Room.databaseBuilder(applicationContext, NotesDatabase::class.java, "notes.db").build().notesDao()
-  setContent { MaterialTheme(colorScheme = if (isSystemInDarkTheme()) darkColorScheme() else lightColorScheme()) { Box(Modifier.fillMaxSize().safeDrawingPadding()) { NotesScreen(dao) } } }
+  setContent { MaterialTheme(colorScheme = darkColorScheme()) { Box(Modifier.fillMaxSize().safeDrawingPadding()) { NotesScreen(dao) } } }
  }
 }
 
