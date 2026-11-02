@@ -3,6 +3,7 @@ package com.example.mathnotes
 import android.os.Bundle
 import android.graphics.Color
 import androidx.core.view.WindowCompat
+import androidx.compose.ui.graphics.Color as ComposeColor
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.compose.BackHandler
@@ -30,8 +31,8 @@ class MainActivity : ComponentActivity() {
  override fun onCreate(savedInstanceState: Bundle?) {
   super.onCreate(savedInstanceState)
   window.decorView.setBackgroundColor(Color.rgb(20, 18, 24))
-  window.statusBarColor = Color.rgb(20, 18, 24)
-  window.navigationBarColor = Color.rgb(20, 18, 24)
+  window.statusBarColor = Color.TRANSPARENT
+  window.navigationBarColor = Color.TRANSPARENT
   window.isStatusBarContrastEnforced = false
   window.isNavigationBarContrastEnforced = false
   WindowCompat.getInsetsController(window, window.decorView).apply {
@@ -39,7 +40,7 @@ class MainActivity : ComponentActivity() {
     isAppearanceLightNavigationBars = false
   }
   val dao = Room.databaseBuilder(applicationContext, NotesDatabase::class.java, "notes.db").build().notesDao()
-  setContent { MaterialTheme(colorScheme = darkColorScheme()) { Box(Modifier.fillMaxSize().safeDrawingPadding()) { NotesScreen(dao) } } }
+  setContent { MaterialTheme(colorScheme = darkColorScheme()) { Box(Modifier.fillMaxSize().background(ComposeColor(0xFF141218)).safeDrawingPadding()) { NotesScreen(dao) } } }
  }
 }
 
