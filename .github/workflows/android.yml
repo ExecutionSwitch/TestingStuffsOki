@@ -49,6 +49,8 @@ jobs:
           test -s signing/mathnotes.jks
           test -s signing/password.txt
           echo "MATHNOTES_SIGNING_PASSWORD=$(cat signing/password.txt)" >> "$GITHUB_ENV"
+      - name: Run calculator regression tests
+        run: gradle --no-daemon :app:testDebugUnitTest
       - name: Build APK
         run: gradle --no-daemon :app:assembleDebug
       - name: Upload APK
